@@ -1,7 +1,7 @@
 [package]
 name = "matrixmultiply"
 edition = "2018"
-version = "0.3.7"
+version = "0.3.7+no-tls"
 authors = [
     "bluss",
     "R. Janis Goldschmidt"
@@ -50,6 +50,7 @@ cgemm = []
 
 threading = ["thread-tree", "std", "once_cell", "num_cpus"]
 std = []
+tls = ["std"]
 
 # support for compile-time configuration
 constconf = []

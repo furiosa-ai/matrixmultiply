@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(feature="std")]
+#[cfg(feature="tls")]
 use core::cell::UnsafeCell;
 use core::cmp::min;
 use core::mem::size_of;
@@ -351,7 +351,7 @@ struct MaskBuffer {
 
 // Use thread local if we can; this is faster even in the single threaded case because
 // it is possible to skip zeroing out the array.
-#[cfg(feature = "std")]
+#[cfg(feature = "tls")]
 thread_local! {
     static MASK_BUF: UnsafeCell<MaskBuffer> =
         UnsafeCell::new(MaskBuffer { buffer: [0; MASK_BUF_SIZE] });
@@ -377,7 +377,7 @@ unsafe fn gemm_packed<K>(nc: usize, kc: usize, mc: usize,
     // check for the mask buffer that fits 8 x 8 f32 and 8 x 4 f64 kernels and alignment
     assert!(mr * nr * size_of::<K::Elem>() <= KERNEL_MAX_SIZE && K::align_to() <= KERNEL_MAX_ALIGN);
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(not(feature = "tls"))]
     let mut mask_buf = MaskBuffer { buffer: [0; MASK_BUF_SIZE] };
 
     // LOOP 2: through micropanels in packed `b` (B~, C)
@@ -385,12 +385,12 @@ unsafe fn gemm_packed<K>(nc: usize, kc: usize, mc: usize,
         .parallel(thread_config.loop2, tp)
         .thread_local(|_i, _nt| {
             let mut ptr;
-            #[cfg(not(feature = "std"))]
+            #[cfg(not(feature = "tls"))]
             {
                 debug_assert_eq!(_nt, 1);
                 ptr = mask_buf.buffer.as_mut_ptr();
             }
-            #[cfg(feature = "std")]
+            #[cfg(feature = "tls")]
             {
                 ptr = MASK_BUF.with(|buf| (*buf.get()).buffer.as_mut_ptr());
             }
